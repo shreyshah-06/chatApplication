@@ -7,6 +7,7 @@ import (
 
 	"gochatapp/pkg/db"
 	"gochatapp/pkg/redisrepo"
+	"gochatapp/utils"
 )
 
 type userReq struct {
@@ -47,12 +48,23 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := db.RegisterNewUser(db.DB, u.Username, u.Password)
+	// Hash the user's password before storing it
+	hashedPassword, err := utils.HashPassword(u.Password)
 	if err != nil {
+		// If there is an error hashing the password, return an error response
+		jsonResponse(w, false, "Error hashing password", nil, 0)
+		return
+	}
+
+	// Store the user with the hashed password in the database
+	err = db.RegisterNewUser(db.DB, u.Username, hashedPassword)
+	if err != nil {
+		// If the registration fails, return an error response
 		jsonResponse(w, false, "Registration failed", nil, 0)
 		return
 	}
 
+	// If everything is successful, return a success response
 	jsonResponse(w, true, "User registered successfully", nil, 0)
 }
 
@@ -63,13 +75,21 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := redisrepo.IsUserAuthentic(u.Username, u.Password)
+	err := db.IsUserAuthentic(db.DB, u.Username, u.Password)
 	if err != nil {
 		jsonResponse(w, false, err.Error(), nil, 0)
 		return
 	}
+	// If authentication is successful, generate the JWT token
+	token, err := utils.CreateJWT(u.Username)
+	if err != nil {
+		// If there is an error generating the token, return an error response
+		jsonResponse(w, false, "Error generating JWT token", nil, 0)
+		return
+	}
 
-	jsonResponse(w, true, "Login successful", nil, 0)
+	// Return a successful response with the JWT token
+	jsonResponse(w, true, "Login successful", map[string]string{"token": token}, 0)
 }
 
 func verifyContactHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +99,7 @@ func verifyContactHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !redisrepo.IsUserExist(u.Username) {
+	if !db.IsUserExist(db.DB ,u.Username) {
 		jsonResponse(w, false, "Invalid username", nil, 0)
 		return
 	}
@@ -105,15 +125,26 @@ func chatHistoryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Try fetching recent chat from Redis
 	chats, err := redisrepo.FetchChatBetween(u1, u2, fromTS, toTS)
 	if err != nil {
-		log.Println("Error fetching chat history:", err)
-		jsonResponse(w, false, "Unable to fetch chat history", nil, 0)
-		return
+		log.Println("Error fetching chat history from Redis:", err)
 	}
 
+	// If no chat found in Redis, try fetching from PostgreSQL
+	if len(chats) == 0 {
+		chats, err = db.FetchChatBetween(u1, u2, fromTS, toTS)
+		if err != nil {
+			log.Println("Error fetching chat history from PostgreSQL:", err)
+			jsonResponse(w, false, "Unable to fetch chat history", nil, 0)
+			return
+		}
+	}
+
+	// Return the chat history
 	jsonResponse(w, true, "Chat history fetched successfully", chats, len(chats))
 }
+
 
 func contactListHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")

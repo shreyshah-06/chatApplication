@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"gochatapp/utils"
 )
 
 // User model
@@ -39,10 +40,20 @@ func IsUserAuthentic(db *sql.DB, username, password string) error {
 	query := "SELECT password FROM users WHERE username = $1"
 	err := db.QueryRow(query, username).Scan(&storedPassword)
 	if err == sql.ErrNoRows {
+		// If the user doesn't exist, return an error
 		return errors.New("invalid username or password")
 	}
-	if storedPassword != password {
+	if err != nil {
+		// Handle other potential database errors
+		return err
+	}
+
+	// Compare the hashed password stored in the database with the provided password
+	if !utils.CheckPasswordHash(password, storedPassword) {
+		// If the password doesn't match, return an error
 		return errors.New("invalid username or password")
 	}
+
+	// If everything is valid, return nil (successful authentication)
 	return nil
 }

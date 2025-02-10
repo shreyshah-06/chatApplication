@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gochatapp/model"
+	"gochatapp/pkg/db"
 	"log"
 	"strings"
 	"time"
@@ -51,36 +52,64 @@ func UpdateContactList(username, contact string) error {
 }
 
 func CreateChat(c *model.Chat) (string, error) {
-	chatKey := chatKey()
-	by, _ := json.Marshal(c)
+    chatKey := chatKey()
+    
+    // Serialize the chat object
+    by, err := json.Marshal(c)
+    if err != nil {
+        log.Println("Error marshaling chat:", err)
+        return "", err
+    }
 
-	res, err := redisClient.Do(
-		context.Background(),
-		"JSON.SET",
-		chatKey,
-		"$",
-		string(by),
-	).Result()
+    // Store chat in Redis
+    res, err := redisClient.Do(
+        context.Background(),
+        "JSON.SET",
+        chatKey,
+        "$",
+        string(by),
+    ).Result()
 
-	if err != nil {
-		log.Println("Error setting chat JSON:", err)
-		return "", err
-	}
+    if err != nil {
+        log.Println("Error setting chat JSON:", err)
+        return "", err
+    }
 
-	log.Println("Chat successfully set:", res)
+    // Set expiration explicitly
+    _, err = redisClient.Do(
+        context.Background(),
+        "EXPIRE",
+        chatKey,
+        "2592000", // 30 days
+    ).Result()
 
-	if err = UpdateContactList(c.From, c.To); err != nil {
-		log.Println("Error updating contact list of", c.From)
-		return "", err
-	}
+    if err != nil {
+        log.Println("Error setting expiration:", err)
+        return "", err
+    }
 
-	if err = UpdateContactList(c.To, c.From); err != nil {
-		log.Println("Error updating contact list of", c.To)
-		return "", err
-	}
+    log.Println("Chat successfully set in Redis:",res,  c)
 
-	return chatKey, nil
+    // Update contact list for both users
+    if err = UpdateContactList(c.From, c.To); err != nil {
+        log.Println("Error updating contact list for", c.From)
+        return "", err
+    }
+
+    if err = UpdateContactList(c.To, c.From); err != nil {
+        log.Println("Error updating contact list for", c.To)
+        return "", err
+    }
+	// fmt.Println("Chat successfully set in Redis:", res)
+    // Store the chat in PostgreSQL
+    if err := db.StoreChatInPostgres(c); err != nil {
+        log.Println("Error storing chat in PostgreSQL:", err)
+    }
+
+    return chatKey, nil
 }
+
+
 
 func CreateFetchChatBetweenIndex() {
 	res, err := redisClient.Do(context.Background(),
@@ -102,14 +131,19 @@ func CreateFetchChatBetweenIndex() {
 }
 
 func FetchChatBetween(username1, username2, fromTS, toTS string) ([]model.Chat, error) {
+	// Fetch messages from Redis with a limit (20 for recent messages)
+	limit := "20" // or pass the limit dynamically based on your server load or user preferences
+
 	query := fmt.Sprintf("@from:{%s|%s} @to:{%s|%s} @timestamp:[%s %s]",
 		username1, username2, username1, username2, fromTS, toTS)
 
+	// Redis search query to fetch messages in batches (20 messages at a time)
 	res, err := redisClient.Do(context.Background(),
 		"FT.SEARCH",
 		chatIndex(),
 		query,
 		"SORTBY", "timestamp", "DESC",
+		"LIMIT", "0", limit,
 	).Result()
 
 	if err != nil {
@@ -117,11 +151,13 @@ func FetchChatBetween(username1, username2, fromTS, toTS string) ([]model.Chat, 
 		return nil, err
 	}
 
+	// Deserialize the response from Redis
 	data := Deserialise(res)
 	if data == nil {
 		return nil, fmt.Errorf("no data found for the given query")
 	}
 
+	// Convert deserialized data to model.Chat objects
 	return DeserialiseChat(data), nil
 }
 

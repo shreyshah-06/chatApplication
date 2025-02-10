@@ -5,6 +5,7 @@ go 1.22.0
 toolchain go1.23.4
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/gorilla/mux v1.8.0
@@ -12,6 +13,7 @@ require (
 	github.com/joho/godotenv v1.4.0
 	github.com/lib/pq v1.10.9
 	github.com/rs/cors v1.8.2
+	golang.org/x/crypto v0.33.0
 )
 
 require (

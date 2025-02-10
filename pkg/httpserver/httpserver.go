@@ -2,9 +2,11 @@ package httpserver
 
 import (
 	"fmt"
+	"gochatapp/pkg/redisrepo"
+	"gochatapp/pkg/ws"
 	"net/http"
 
-	"gochatapp/pkg/redisrepo"
+	// "gochatapp/pkg/redisrepo"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -27,6 +29,8 @@ func StartHTTPServer() {
 	r.HandleFunc("/verify-contact", verifyContactHandler).Methods(http.MethodPost)
 	r.HandleFunc("/chat-history", chatHistoryHandler).Methods(http.MethodGet)
 	r.HandleFunc("/contact-list", contactListHandler).Methods(http.MethodGet)
+
+	r.HandleFunc("/ws", ws.ServeWs)
 
 	// Start server with CORS configuration
 	handler := cors.AllowAll().Handler(r)

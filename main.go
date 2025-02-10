@@ -7,7 +7,6 @@ import (
 
 	"gochatapp/pkg/db"
 	"gochatapp/pkg/httpserver"
-	"gochatapp/pkg/ws"
 
 	"github.com/joho/godotenv"
 )
@@ -32,7 +31,7 @@ func main() {
 		httpserver.StartHTTPServer()
 	} else if *server == "websocket" {
 		fmt.Println("websocket server is starting on :8081")
-		ws.StartWebsocketServer()
+		// ws.StartWebsocketServer()
 	} else {
 		fmt.Println("invalid server. Available server: http or websocket")
 	}
