@@ -52,61 +52,55 @@ func UpdateContactList(username, contact string) error {
 }
 
 func CreateChat(c *model.Chat) (string, error) {
-    chatKey := chatKey()
-    
-    // Serialize the chat object
-    by, err := json.Marshal(c)
-    if err != nil {
-        log.Println("Error marshaling chat:", err)
-        return "", err
-    }
+	chatKey := chatKey()
 
-    // Store chat in Redis
-    res, err := redisClient.Do(
-        context.Background(),
-        "JSON.SET",
-        chatKey,
-        "$",
-        string(by),
-    ).Result()
+	// Serialize the chat object
+	by, err := json.Marshal(c)
+	if err != nil {
+		log.Println("Error marshaling chat:", err)
+		return "", err
+	}
 
-    if err != nil {
-        log.Println("Error setting chat JSON:", err)
-        return "", err
-    }
+	// Save chat in Redis concurrently
+	redisDone := make(chan string, 1)
+	go func() {
+		res, err := redisClient.Do(
+			context.Background(),
+			"JSON.SET",
+			chatKey,
+			"$",
+			string(by),
+		).Result()
 
-    // Set expiration explicitly
-    _, err = redisClient.Do(
-        context.Background(),
-        "EXPIRE",
-        chatKey,
-        "2592000", // 30 days
-    ).Result()
+		if err != nil {
+			log.Println("Error setting chat JSON:", err)
+		} else {
+			log.Println("Chat successfully set in Redis:", res)
+			redisDone <- chatKey
+		}
+		close(redisDone)
+	}()
 
-    if err != nil {
-        log.Println("Error setting expiration:", err)
-        return "", err
-    }
+	// Update contact lists concurrently
+	go func() {
+		if err := UpdateContactList(c.From, c.To); err != nil {
+			log.Println("Error updating contact list for", c.From)
+		}
+		if err := UpdateContactList(c.To, c.From); err != nil {
+			log.Println("Error updating contact list for", c.To)
+		}
+	}()
 
-    log.Println("Chat successfully set in Redis:",res,  c)
+	// Store chat in PostgreSQL concurrently
+	go func() {
+		if err := db.StoreChatInPostgres(c); err != nil {
+			log.Println("Error storing chat in PostgreSQL:", err)
+		}
+	}()
 
-    // Update contact list for both users
-    if err = UpdateContactList(c.From, c.To); err != nil {
-        log.Println("Error updating contact list for", c.From)
-        return "", err
-    }
-
-    if err = UpdateContactList(c.To, c.From); err != nil {
-        log.Println("Error updating contact list for", c.To)
-        return "", err
-    }
-	// fmt.Println("Chat successfully set in Redis:", res)
-    // Store the chat in PostgreSQL
-    if err := db.StoreChatInPostgres(c); err != nil {
-        log.Println("Error storing chat in PostgreSQL:", err)
-    }
-
-    return chatKey, nil
+	// Wait for Redis operation to complete to return key
+	chatKey = <-redisDone
+	return chatKey, nil
 }
 
 

@@ -120,7 +120,7 @@ func chatHistoryHandler(w http.ResponseWriter, r *http.Request) {
 		toTS = "+inf"
 	}
 
-	if !redisrepo.IsUserExist(u1) || !redisrepo.IsUserExist(u2) {
+	if !db.IsUserExist(db.DB ,u1) || !db.IsUserExist(db.DB ,u2) {
 		jsonResponse(w, false, "Invalid username(s)", nil, 0)
 		return
 	}
