@@ -10,5 +10,5 @@ type Chat struct {
 
 type ContactList struct {
 	Username     string `json:"username"`
-	LastActivity int64  `json:"last_activity"`
+	LastActivity float64  `json:"last_activity"`
 }

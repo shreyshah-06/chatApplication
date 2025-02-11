@@ -10,9 +10,13 @@ import (
 	"gochatapp/utils"
 )
 
-type userReq struct {
+type userInfo struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type userReq struct {
+	Username string `json:"username"`
 }
 
 type response struct {
@@ -37,7 +41,7 @@ func jsonResponse(w http.ResponseWriter, status bool, message string, data inter
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
-	u := &userReq{}
+	u := &userInfo{}
 	if err := json.NewDecoder(r.Body).Decode(u); err != nil {
 		jsonResponse(w, false, "Invalid request payload", nil, 0)
 		return
@@ -69,7 +73,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	u := &userReq{}
+	u := &userInfo{}
 	if err := json.NewDecoder(r.Body).Decode(u); err != nil {
 		jsonResponse(w, false, "Invalid request payload", nil, 0)
 		return

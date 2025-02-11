@@ -54,7 +54,7 @@ func DeserialiseContactList(contacts []redis.Z) []model.ContactList {
 	for _, contact := range contacts {
 		contactList = append(contactList, model.ContactList{
 			Username:     contact.Member.(string),
-			LastActivity: int64(contact.Score),
+			LastActivity: float64(contact.Score),
 		})
 	}
 	return contactList
