@@ -6,6 +6,8 @@ import LoginIcon from '@mui/icons-material/Login';
 import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
 import ChatIcon from '@mui/icons-material/Chat';
+import { ToastContainer, toast } from 'react-toastify'; // Import Toastify
+import 'react-toastify/dist/ReactToastify.css'; // Import Toastify styles
 
 function Login() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -33,7 +35,15 @@ function Login() {
   };
 
   return (
-    <Box sx={{ backgroundColor: '#E7ECEF', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', p: 2 }}>
+    <Box sx={{ 
+      backgroundColor: '#E7ECEF', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '90vh',
+      p: 2 
+    }}>
       <Container maxWidth="xs">
         <Paper elevation={12} sx={{
           p: 4,
@@ -70,7 +80,7 @@ function Login() {
             value={credentials.username}
             onChange={handleChange}
             sx={{ mb: 2, backgroundColor: '#ffffff', borderRadius: 1 }}
-            InputLabelProps={{ shrink: true }}
+            InputLabelProps={{ shrink: true, fontWeight: 'bold' }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -119,6 +129,20 @@ function Login() {
           >
             Login
           </Button>
+
+          {/* New to ChatConnect? Section */}
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography variant="body2" sx={{
+              fontWeight: 'bold',
+              color: '#A3CEF1',
+              '&:hover': {
+                color: '#6096BA',
+                cursor: 'pointer',
+              },
+            }}>
+              New to ChatConnect? <span onClick={() => navigate('/register')} style={{ textDecoration: 'underline', color:'#e5383b' }}>Register here</span>
+            </Typography>
+          </Box>
         </Paper>
       </Container>
     </Box>

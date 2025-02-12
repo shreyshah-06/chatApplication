@@ -56,7 +56,4 @@ yarn-error.log*
 dist
 
 
-src/components/Chat/
-src/serviceWorker.js
-src/socket-connection.js
 

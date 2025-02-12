@@ -18,9 +18,9 @@ function App() {
           <Header />
           <Routes>
             <Route path="/" element={<Landing />} />
-            {/* <Route path="/register" element={<Register />} /> */}
+            <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
-            {/* <Route path="/chat" element={<Chat />} /> */}
+            <Route path="/chat" element={<Chat />} />
           </Routes>
           <Footer />
         </BrowserRouter>
