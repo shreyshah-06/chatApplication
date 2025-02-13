@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import {
   Container,
   Box,
@@ -17,6 +16,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axiosInstance from '../utils/axiosInstance';
 
 function Register() {
   const [credentials, setCredentials] = useState({
@@ -28,7 +28,6 @@ function Register() {
   const [passwordValid, setPasswordValid] = useState(true);
   const [passwordMatch, setPasswordMatch] = useState(true);
   const navigate = useNavigate();
-  const endpoint = 'http://localhost:8080/register';
 
   // Handle form field changes
   const handleChange = e => {
@@ -67,7 +66,8 @@ function Register() {
     }
 
     try {
-      const res = await axios.post(endpoint, credentials);
+      // const res = await axios.post(endpoint, credentials);
+      const res = await axiosInstance.post('/register', credentials);
       if (res.data.status) {
         toast.success('Registration successful! Redirecting to chat...');
         navigate(`/chat?u=${credentials.username}`);

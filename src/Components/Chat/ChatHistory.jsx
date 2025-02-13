@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, ListItemButton, ListItemText, Divider, Box, Paper, Typography } from '@mui/material';
+import {Box, Paper, Typography } from '@mui/material';
 
 const ChatHistory = (currentUser, chats) => {
   return (
