@@ -5,7 +5,7 @@ type Chat struct {
 	From      string `json:"from"`
 	To        string `json:"to"`
 	Msg       string `json:"message"`
-	Timestamp int64  `json:"timestamp"`
+	Timestamp float64  `json:"timestamp"`
 }
 
 type ContactList struct {

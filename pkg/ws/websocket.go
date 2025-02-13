@@ -128,7 +128,7 @@ func receiver(client *Client) {
 
             // Set timestamp if not already set
             if m.Chat.Timestamp == 0 {
-                m.Chat.Timestamp = time.Now().Unix()
+                m.Chat.Timestamp = float64(time.Now().Unix())
             }
 
             // Save in Redis and get ID
