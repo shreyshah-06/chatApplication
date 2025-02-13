@@ -153,12 +153,12 @@ func chatHistoryHandler(w http.ResponseWriter, r *http.Request) {
 func contactListHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 
-	if !redisrepo.IsUserExist(username) {
+	if !db.IsUserExist(db.DB, username) {
 		jsonResponse(w, false, "Invalid username", nil, 0)
 		return
 	}
 
-	contacts, err := redisrepo.FetchContactList(username)
+	contacts, err := db.FetchContactList(db.DB, username)
 	if err != nil {
 		log.Println("Error fetching contact list:", err)
 		jsonResponse(w, false, "Unable to fetch contact list", nil, 0)

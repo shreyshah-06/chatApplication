@@ -42,7 +42,7 @@ func StartHTTPServer() {
 	r.Handle("/pending-follow-request", auth.JwtMiddleware(http.HandlerFunc(pendingFollowRequestsHandler))).Methods(http.MethodGet)
 
 	// WebSocket route for real-time communication
-	r.Handle("/ws", auth.JwtMiddleware(http.HandlerFunc(ws.ServeWs)))
+	r.Handle("/ws", (http.HandlerFunc(ws.ServeWs)))
 
 	// Start the server with CORS configuration (Allow all origins for simplicity, can be restricted as needed)
 	handler := cors.AllowAll().Handler(r)
