@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Container, Box, TextField, Button, Typography, Paper, Alert, InputAdornment } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonIcon from '@mui/icons-material/Person';
 import LockIcon from '@mui/icons-material/Lock';
 import ChatIcon from '@mui/icons-material/Chat';
-import { ToastContainer, toast } from 'react-toastify'; // Import Toastify
-import 'react-toastify/dist/ReactToastify.css'; // Import Toastify styles
+import 'react-toastify/dist/ReactToastify.css';
+import axiosInstance from '../utils/axiosInstance';
 
 function Login() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const endpoint = 'http://localhost:8080/login';
 
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -23,8 +21,12 @@ function Login() {
     e.preventDefault();
     setError('');
     try {
-      const res = await axios.post(endpoint, credentials);
+      console.log(credentials)
+      // const res = await axios.post(endpoint, credentials);
+      const res = await axiosInstance.post('/login', credentials);
       if (res.data.status) {
+        const token = res.data.data.token;
+        localStorage.setItem('authToken', token);
         navigate(`/chat?u=${credentials.username}`);
       } else {
         setError(res.data.message);

@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import SocketConnection from '../../socket-connection';
 import ChatHistory from './ChatHistory';
 import ContactList from './ContactList';
+import axiosInstance from '../../utils/axiosInstance';
 import {
   Container,
   TextField,
@@ -26,7 +26,6 @@ class Chat extends Component {
       message: '',
       to: '',
       isInvalid: false,
-      endpoint: 'http://localhost:8080',
       contact: '',
       contacts: [],
       renderContactList: [],
@@ -60,23 +59,35 @@ class Chat extends Component {
   };
 
   onSubmit = e => {
-    if (e.charCode === 13) {
-      e.preventDefault();
-      const msg = {
-        type: 'message',
-        chat: {
-          from: this.state.username,
-          to: this.state.to,
-          message: this.state.message,
-        },
-      };
+    e.preventDefault();
+  
+    // if (!this.state.to || !this.state.message) {
+    //   console.log('Recipient or message is empty');
+    //   return;
+    // }
+  
+    // Create the message object with the required format
+    const msg = {
+      type: 'chat',
+      chat: {
+        from: this.state.username,  // from the logged-in user
+        to: this.state.to,          // to the selected contact
+        message: this.state.message, // the message content
+      },
+    };
+  
+    if (this.state.socketConn && this.state.socketConn.socket.readyState === WebSocket.OPEN) {
       this.state.socketConn.sendMsg(msg);
       this.setState({ message: '' });
+    } else {
+      console.log('WebSocket not connected. Message not sent.');
     }
   };
+  
+  
 
   getContacts = async user => {
-    const res = await axios.get(`${this.state.endpoint}/contact-list?username=${user}`);
+    const res = await axiosInstance.get(`/contact-list?username=${user}`);
     if (res.data['data']) {
       this.setState({ contacts: res.data.data });
       this.renderContactList(res.data.data);
@@ -85,7 +96,7 @@ class Chat extends Component {
 
   fetchChatHistory = async (u1, u2) => {
     try {
-      const res = await axios.get(`${this.state.endpoint}/chat-history?u1=${u1}&u2=${u2}`);
+      const res = await axiosInstance.get(`/chat-history?u1=${u1}&u2=${u2}`);;
       if (res.data.status && Array.isArray(res.data.data)) {
         this.setState({ chats: res.data.data.reverse() });
         this.renderChatHistory(u1, res.data.data);
@@ -107,9 +118,12 @@ class Chat extends Component {
   };
 
   sendMessageTo = to => {
+    // Set the recipient ("to") user and fetch the chat history
     this.setState({ to });
     this.fetchChatHistory(this.state.username, to);
+    this.state.socketConn.sendAckMessage(this.state.username)
   };
+  
 
   render() {
     return (
@@ -154,7 +168,7 @@ class Chat extends Component {
                 name="message" 
                 value={this.state.message} 
                 onChange={this.onChange} 
-                onKeyDown={this.onSubmit} 
+                // onKeyDown={this.onSubmit} 
               />
               <Button fullWidth variant="contained" color="primary" startIcon={<SendIcon />} onClick={this.onSubmit}>
                 Send
