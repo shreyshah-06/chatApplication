@@ -1,7 +1,7 @@
 package main
 
 import (
-	"flag"
+	// "flag"
 	"fmt"
 	"log"
 
@@ -20,19 +20,20 @@ func init() {
 }
 
 func main() {
-	server := flag.String("server", "", "http,websocket")
-	flag.Parse()
+	// server := flag.String("server", "", "http,websocket")
+	// flag.Parse()
 
 	db.InitPostgres()
 	defer db.DB.Close()
-
-	if *server == "http" {
-		fmt.Println("http server is starting on :8080")
+	fmt.Println("http server is starting on :8080")
 		httpserver.StartHTTPServer()
-	} else if *server == "websocket" {
-		fmt.Println("websocket server is starting on :8081")
-		// ws.StartWebsocketServer()
-	} else {
-		fmt.Println("invalid server. Available server: http or websocket")
-	}
+	// if *server == "http" {
+	// 	fmt.Println("http server is starting on :8080")
+	// 	httpserver.StartHTTPServer()
+	// } else if *server == "websocket" {
+	// 	fmt.Println("websocket server is starting on :8081")
+	// 	// ws.StartWebsocketServer()
+	// } else {
+	// 	fmt.Println("invalid server. Available server: http or websocket")
+	// }
 }
