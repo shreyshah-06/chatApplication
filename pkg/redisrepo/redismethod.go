@@ -53,34 +53,33 @@ func UpdateContactList(username, contact string) error {
 
 func CreateChat(c *model.Chat) (string, error) {
 	chatKey := chatKey()
-
+	
 	// Serialize the chat object
 	by, err := json.Marshal(c)
 	if err != nil {
 		log.Println("Error marshaling chat:", err)
 		return "", err
 	}
-
-	// Save chat in Redis concurrently
+	
+	// Save chat in Redis concurrently using standard SET command instead of JSON.SET
 	redisDone := make(chan string, 1)
 	go func() {
-		res, err := redisClient.Do(
+		res, err := redisClient.Set(
 			context.Background(),
-			"JSON.SET",
 			chatKey,
-			"$",
 			string(by),
+			0, // no expiration
 		).Result()
-
+		
 		if err != nil {
-			log.Println("Error setting chat JSON:", err)
+			log.Println("Error setting chat in Redis:", err)
 		} else {
 			log.Println("Chat successfully set in Redis:", res)
 			redisDone <- chatKey
 		}
 		close(redisDone)
 	}()
-
+	
 	// Update contact lists concurrently
 	go func() {
 		if err := UpdateContactList(c.From, c.To); err != nil {
@@ -90,14 +89,14 @@ func CreateChat(c *model.Chat) (string, error) {
 			log.Println("Error updating contact list for", c.To)
 		}
 	}()
-
+	
 	// Store chat in PostgreSQL concurrently
 	go func() {
 		if err := db.StoreChatInPostgres(c); err != nil {
 			log.Println("Error storing chat in PostgreSQL:", err)
 		}
 	}()
-
+	
 	// Wait for Redis operation to complete to return key
 	chatKey = <-redisDone
 	return chatKey, nil
